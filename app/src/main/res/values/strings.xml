@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">HelloWorld</string>
+    <string name="hint_edit_text_contact_number">Contact Number</string>
+    <string name="hint_edit_text_message">Message</string>
+    <string name="text_button_send">Send</string>
+    <string name="hint_edit_text_contact_number_new">Enter Contact Number</string>
+</resources>
