@@ -31,29 +31,8 @@ public class SendMessageActivity extends Activity {
         //initialize the context
         this.context=getApplicationContext();
 
-        EditText editTextContactNumber = findViewById(R.id.editTextContactNumber);
-        editTextContactNumber.setHint(R.string.hint_edit_text_contact_number_new);
-
         //initialize the class variable before using it
         buttonSend = findViewById(R.id.buttonSend);
-
-        editTextContactNumber.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                //vall validateInputs method and get if the fields are valid or not
-                boolean isFieldsValid = validateInputs();
-                // if the fields are valid, enable the button
-                if(isFieldsValid){
-                    buttonSend.setEnabled(true);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
 
         //get the java reference to Message Text box
         EditText editTextMessage = findViewById(R.id.editTextMessage);
@@ -80,11 +59,8 @@ public class SendMessageActivity extends Activity {
         buttonSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //get the java reference to Contact Number Text box
-                EditText editTextContactNumber = findViewById(R.id.editTextContactNumber);
-                //get the current text from Contact Number text box
-                String contactNumberText = editTextContactNumber.getText().toString();
-
+                //initialize the contactNumberText to a null value for now
+                String contactNumberText = null;
                 //get the java reference to Message Text box
                 EditText editTextMessage = findViewById(R.id.editTextMessage);
                 //get the current text from Message text box
@@ -107,10 +83,8 @@ public class SendMessageActivity extends Activity {
     //this is to check if both contact number and a message is enetered
     private boolean validateInputs() {
         boolean isValid = true;
-        //get the java reference to Contact Number Text box
-        EditText editTextContactNumber = findViewById(R.id.editTextContactNumber);
-        //get the current text from Contact Number text box
-        String contactNumberText = editTextContactNumber.getText().toString();
+        //initialize the contactNumberText to a null value for now
+        String contactNumberText = null;
 
         //if the text of contact number edittext is an empty value, set the valid status to false
         if (contactNumberText == null || contactNumberText.trim().isEmpty()) {
