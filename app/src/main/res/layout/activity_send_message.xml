@@ -36,6 +36,6 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_marginTop="25dp"
-        android:text="@string/hint_edit_text_contact_number" />
+        android:hint="@string/hint_edit_text_contact_number" />
 
 </RelativeLayout>
