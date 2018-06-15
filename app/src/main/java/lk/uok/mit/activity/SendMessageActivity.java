@@ -1,11 +1,14 @@
 package lk.uok.mit.activity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -21,7 +24,6 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import lk.uok.mit.helloworld.HelloWorldActivity;
 import lk.uok.mit.helloworld.R;
@@ -37,19 +39,28 @@ public class SendMessageActivity extends Activity {
     //declare a variable at class level to hold the reference to the Contact Number autocomplete field
     private AutoCompleteTextView autoCompleteTextContactNumber = null;
 
+    private int uniqueAppRequestCode = 1234;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //set the view of the activity
         setContentView(R.layout.activity_send_message);
-
         //initialize the context
         this.context = getApplicationContext();
-
         //initialize the autoCompleteTextContactNumber by geting reference
         this.autoCompleteTextContactNumber = findViewById(R.id.autoCompleteTextContactNumber);
-        //call the setDataSourceForAutoComplete method we wrote to initialize the data source
-        this.setDataSourceForAutoComplete();
+
+        //get if permission is granted or not to read contacts
+        boolean hasPermission = this.hasUserPermission(Manifest.permission.READ_CONTACTS);
+        if (!(hasPermission)) {
+            //if read contact permission is not already granted, request permission
+            this.requestPermission(Manifest.permission.READ_CONTACTS);
+        } else {
+            //call the setDataSourceForAutoComplete method we wrote to initialize the data source
+            this.setDataSourceForAutoComplete();
+        }
+
 
         //initialize the class variable before using it
         buttonSend = findViewById(R.id.buttonSend);
@@ -82,7 +93,7 @@ public class SendMessageActivity extends Activity {
             @Override
             public void onClick(View v) {
                 //initialize the contactNumberText to a null value for now
-                String contactNumberText = null;
+                String contactNumberText = autoCompleteTextContactNumber.getText().toString();
                 //get the java reference to Message Text box
                 EditText editTextMessage = findViewById(R.id.editTextMessage);
                 //get the current text from Message text box
@@ -98,8 +109,6 @@ public class SendMessageActivity extends Activity {
                 startActivity(intent);
             }
         });
-
-
     }
 
     //a method to set the data source (adapter) to the autoCompleteTextContactNumber
@@ -127,13 +136,25 @@ public class SendMessageActivity extends Activity {
     private List<String> getContactNumbers() {
         //i.	Create a new java.util.ArrayList of String
         List<String> contactNumberList = new ArrayList<String>();
-        //ii.	Add 10 random numbers to the list
-        for (int i = 0; i < 10; i++) {
-            Random rnd = new Random();
-            //(numbers to look like phone numbers)
-            int n = 112280670 + rnd.nextInt(9000000);
-            contactNumberList.add('0' + Integer.toString(n));
+        //write a query to the URI of the data kind representing a telephone number
+        Cursor cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
+        //using the returned cursor from above query, move through each row by using cursor's moveToNext() method
+        while (cursor.moveToNext()) {
+            //check if the contact has a phone number using the column having an indicator of whether this contact has at least one phone number
+            int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)));
+            if (hasPhoneNumber > 0) {
+                //if the contact has a phone number, get it
+                String phoneNumber = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                if (!(phoneNumber == null || phoneNumber.trim().equals(""))) {
+                    //if the reteievd phone number is not null or an empty string, add it to the list
+                    contactNumberList.add(phoneNumber);
+                }
+            }
+
         }
+        //after reading through the result, close the cursor
+        cursor.close();
+
         //iii.	Return the list
         return contactNumberList;
     }
@@ -157,24 +178,37 @@ public class SendMessageActivity extends Activity {
 
     // Request a runtime permission to app user.
     private void requestPermission(String permission) {
+        //initialize an array and add the permission to it
         String requestPermissionArray[] = {permission};
-        ActivityCompat.requestPermissions(this, requestPermissionArray, 1);
+        ActivityCompat.requestPermissions(this, requestPermissionArray, this.uniqueAppRequestCode);
     }
+
 
     // After user select Allow or Deny button in request runtime permission dialog
     // , this method will be invoked.
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        int length = grantResults.length;
-        if (length > 0) {
-            int grantResult = grantResults[0];
-
-            if (grantResult == PackageManager.PERMISSION_GRANTED) {
-
+        //declare a variable of type boolean to hold if the user has granted the permision or not
+        boolean hasGranted = false;
+        //first check if the request code matched with our request
+        if (requestCode == this.uniqueAppRequestCode) {
+            //check if any results are granted
+            int length = grantResults.length;
+            if (length > 0) {
+                //when permissions are available, iterate through them to check if granted
+                for (int i = 0; i < length; i++) {
+                    if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                        hasGranted = true;
+                    }
+                }
+            }
+            //if granted, show a notification accordingly
+            if (hasGranted) {
                 Toast.makeText(getApplicationContext(), "You allowed permission, please enter contact again.", Toast.LENGTH_LONG).show();
+                setDataSourceForAutoComplete();
             } else {
+                //if not granted, show a notification accordingly
                 Toast.makeText(getApplicationContext(), "You denied permission.", Toast.LENGTH_LONG).show();
             }
         }
@@ -185,7 +219,7 @@ public class SendMessageActivity extends Activity {
     private boolean validateInputs() {
         boolean isValid = true;
         //initialize the contactNumberText to a null value for now
-        String contactNumberText = null;
+        String contactNumberText = autoCompleteTextContactNumber.getText().toString();
 
         //if the text of contact number edittext is an empty value, set the valid status to false
         if (contactNumberText == null || contactNumberText.trim().isEmpty()) {
