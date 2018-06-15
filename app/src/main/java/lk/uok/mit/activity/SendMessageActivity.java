@@ -3,8 +3,13 @@ package lk.uok.mit.activity;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -12,6 +17,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,6 +137,49 @@ public class SendMessageActivity extends Activity {
         //iii.	Return the list
         return contactNumberList;
     }
+
+
+    // Check whether user has phone contacts manipulation permission or not.
+    private boolean hasUserPermission(String permission) {
+        boolean ret = true;
+        // If android sdk version is bigger than 23 the need to check run time permission.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // return phone read contacts permission grant status.
+            int hasPermission = ContextCompat.checkSelfPermission(this.context, permission);
+            // If permission is granted then return true.
+            if (hasPermission != PackageManager.PERMISSION_GRANTED) {
+                ret = false;
+            }
+        }
+        return ret;
+    }
+
+
+    // Request a runtime permission to app user.
+    private void requestPermission(String permission) {
+        String requestPermissionArray[] = {permission};
+        ActivityCompat.requestPermissions(this, requestPermissionArray, 1);
+    }
+
+    // After user select Allow or Deny button in request runtime permission dialog
+    // , this method will be invoked.
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        int length = grantResults.length;
+        if (length > 0) {
+            int grantResult = grantResults[0];
+
+            if (grantResult == PackageManager.PERMISSION_GRANTED) {
+
+                Toast.makeText(getApplicationContext(), "You allowed permission, please enter contact again.", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(getApplicationContext(), "You denied permission.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
 
     //this is to check if both contact number and a message is enetered
     private boolean validateInputs() {
